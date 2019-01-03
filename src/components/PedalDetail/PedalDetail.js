@@ -7,6 +7,8 @@ import { h, render, Component } from "preact";
 import isFavorite from "../../utils/isFavorite";
 import toggleFavorite from "../../utils/toggleFavorite";
 
+require('./../../js/paypal');
+
 export default class PedalDetail extends Component {
   constructor(props) {
     super(props);
@@ -37,6 +39,47 @@ export default class PedalDetail extends Component {
       copy: pedal.copy,
       isFavorite: isFavorite(pedal.id)
     });
+
+    paypal.Button.render({
+      env: 'sandbox',
+      style: {
+        layout: 'vertical',
+        size: 'medium',
+        shape: 'rect',
+        color: 'gold'
+      },
+      funding: {
+        allowed: [
+          paypal.FUNDING.CARD,
+          paypal.FUNDING.CREDIT
+        ],
+        disallowed: []
+      },
+      commit: true,
+      client: {
+        sandbox: 'AZDxjDScFpQtjWTOUtWKbyN_bDt4OgqaF4eYXlewfBP4-8aqX3PiV8e1GWU6liB2CUXlkA59kJXE7M6R'
+      },
+      payment: function (data, actions) {
+        return actions.payment.create({
+          payment: {
+            transactions: [
+              {
+                amount: {
+                  total: '0.01',
+                  currency: 'USD'
+                }
+              }
+            ]
+          }
+        })
+      },
+      onAuthorize: function(data, actions) {
+        return actions.payment.execute()
+        .then(function() {
+          window.alert("Payment Complete!");
+        });
+      }
+    }, '#paypal-button-container');
   }
 
   handleToggleFavorite() {
@@ -59,6 +102,7 @@ export default class PedalDetail extends Component {
             <ToggleFavorite onClick={this.handleToggleFavorite}>{this.state.isFavorite === true ? "-" : "+"}</ToggleFavorite>
             <PedalImage id={this.state.id} manufacturer={this.state.manufacturer} model={this.state.model}/>
           </PedalImageContainer>
+          <div id="paypal-button-container"></div>
           <h2>Type</h2>
           <p>{this.state.type}</p>
           <h2>Description</h2>
